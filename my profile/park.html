@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Monitor | ESP32 + Google Sheets</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #1a73e8;
+            --secondary: #34a853;
+            --danger: #ea4335;
+            --warning: #fbbc04;
+            --dark: #202124;
+            --light: #f8f9fa;
+            --gray: #5f6368;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header {
+            text-align: center;
+            margin: 20px 0 30px;
+            animation: fadeInDown 1s ease;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #00c9ff, #92fe9d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .header h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 4px;
+            background: linear-gradient(to right, #00c9ff, #92fe9d);
+            border-radius: 2px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: #e8eaed;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 35px rgba(0, 0, 0, 0.3);
+        }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            color: #8ab4f8;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+        
+        .parking-spot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .spot-header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .spot-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f8f9fa;
+            background: rgba(0, 0, 0, 0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .sensor-data {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .distance-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: #fbbc04;
+        }
+        
+        .car-icon {
+            font-size: 4.5rem;
+            margin: 15px 0;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+            transition: all 0.5s ease;
+        }
+        
+        .spot-status {
+            font-size: 1.4rem;
+            padding: 10px 25px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+        
+        .occupied {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            box-shadow: 0 4px 20px rgba(255, 75, 43, 0.4);
+        }
+        
+        .vacant {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            box-shadow: 0 4px 20px rgba(56, 239, 125, 0.4);
+        }
+        
+        .occupied .status-indicator {
+            background: #ff416c;
+            box-shadow: 0 0 15px rgba(255, 65, 108, 0.8);
+        }
+        
+        .vacant .status-indicator {
+            background: #51cf66;
+            box-shadow: 0 0 15px rgba(81, 207, 102, 0.8);
+        }
+        
+        .occupied .car-icon {
+            animation: carArrive 0.8s ease forwards;
+            color: #ff6b6b;
+        }
+        
+        .vacant .car-icon {
+            animation: carLeave 0.8s ease forwards;
+            color: #51cf66;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #34a853, #0f9d58);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ea4335, #d93025);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #fbbc04, #f9ab00);
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 12px 20px;
+            border-radius: 50px;
+            background: rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+        
+        .connection-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+        
+        .connected {
+            background: #34a853;
+            box-shadow: 0 0 10px rgba(52, 168, 83, 0.8);
+        }
+        
+        .disconnected {
+            background: #ea4335;
+            box-shadow: 0 0 10px rgba(234, 67, 53, 0.8);
+        }
+        
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .log-timestamp {
+            color: #fbbc04;
+            margin-right: 10px;
+        }
+        
+        .log-message {
+            color: #e8eaed;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: rgba(52, 168, 83, 0.2);
+            color: #34a853;
+        }
+        
+        .badge-warning {
+            background: rgba(251, 188, 4, 0.2);
+            color: #fbbc04;
+        }
+        
+        .badge-danger {
+            background: rgba(234, 67, 53, 0.2);
+            color: #ea4335;
+        }
+        
+        .badge-info {
+            background: rgba(66, 133, 244, 0.2);
+            color: #4285f4;
+        }
+        
+        .config-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .config-group {
+            margin-bottom: 15px;
+        }
+        
+        .config-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #8ab4f8;
+        }
+        
+        .config-input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .config-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+        }
+        
+        .config-hint {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-top: 4px;
+        }
+        
+        .proxy-info {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .proxy-info h3 {
+            color: #fbbc04;
+            margin-bottom: 8px;
+        }
+        
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes carArrive {
+            0% { 
+                transform: translateX(-300px) rotateY(180deg);
+                opacity: 0;
+            }
+            100% { 
+                transform: translateX(0) rotateY(0deg);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes carLeave {
+            0% { 
+                transform: translateX(0) rotateY(0deg);
+                opacity: 1;
+            }
+            100% { 
+                transform: translateX(300px) rotateY(180deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-parking"></i> Smart Parking Monitor</h1>
+        <p>Real-time parking monitoring with ESP32 and Google Sheets integration</p>
+    </div>
+    
+    <div class="dashboard">
+        <!-- Parking Spots Panel -->
+        <div class="panel">
+            <div class="panel-title">
+                <i class="fas fa-car"></i>
+                <h2>Parking Spot Status</h2>
+            </div>
+            
+            <!-- Spot 1 -->
+            <div class="parking-spot vacant" id="spot1">
+                <div class="spot-header">
+                    <div class="spot-number">1</div>
+                    <div class="status-indicator"></div>
+                </div>
+                
+                <div class="sensor-data">
+                    <div>Ultrasonic Sensor Distance</div>
+                    <div class="distance-value" id="distance1">120.5</div>
+                    <div>centimeters</div>
+                </div>
+                
+                <i class="fas fa-car car-icon"></i>
+                <div class="spot-status">Vacant</div>
+            </div>
+            
+            <!-- Spot 2 -->
+            <div class="parking-spot occupied" id="spot2">
+                <div class="spot-header">
+                    <div class="spot-number">2</div>
+                    <div class="status-indicator"></div>
+                </div>
+                
+                <div class="sensor-data">
+                    <div>Ultrasonic Sensor Distance</div>
+                    <div class="distance-value" id="distance2">35.2</div>
+                    <div>centimeters</div>
+                </div>
+                
+                <i class="fas fa-car car-icon"></i>
+                <div class="spot-status">Occupied</div>
+            </div>
+            
+            <!-- Spot 3 -->
+            <div class="parking-spot vacant" id="spot3">
+                <div class="spot-header">
+                    <div class="spot-number">3</div>
+                    <div class="status-indicator"></div>
+                </div>
+                
+                <div class="sensor-data">
+                    <div>Ultrasonic Sensor Distance</div>
+                    <div class="distance-value" id="distance3">115.8</div>
+                    <div>centimeters</div>
+                </div>
+                
+                <i class="fas fa-car car-icon"></i>
+                <div class="spot-status">Vacant</div>
+            </div>
+            
+            <div class="connection-status">
+                <div class="connection-dot disconnected"></div>
+                <span id="connectionStatus">Disconnected from ESP32</span>
+            </div>
+        </div>
+        
+        <!-- Analytics Panel -->
+        <div class="panel">
+            <div class="panel-title">
+                <i class="fas fa-chart-line"></i>
+                <h2>Occupancy Analytics</h2>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="occupancyChart"></canvas>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+                <button class="btn btn-success" id="autoToggleBtn">
+                    <i class="fas fa-power-off"></i> Auto-Refresh: ON
+                </button>
+            </div>
+        </div>
+        
+        <!-- Logging Panel -->
+        <div class="panel">
+            <div class="panel-title">
+                <i class="fas fa-file-export"></i>
+                <h2>Google Sheets Logging</h2>
+            </div>
+            
+            <div class="log-container" id="logOutput">
+                <div class="log-entry">
+                    <span class="log-timestamp">12:30:45</span>
+                    <span class="status-badge badge-info">INFO</span>
+                    <span class="log-message">System initialized</span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-success" id="logBtn">
+                    <i class="fas fa-paper-plane"></i> Send to Google Sheets
+                </button>
+                <button class="btn" id="clearLogBtn">
+                    <i class="fas fa-trash-alt"></i> Clear Log
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="config-panel">
+        <div class="panel-title">
+            <i class="fas fa-cog"></i>
+            <h2>Hardware Configuration</h2>
+        </div>
+        
+        <div class="config-group">
+            <label class="config-label">ESP32 IP Address:</label>
+            <input type="text" class="config-input" id="esp32Ip" placeholder="192.168.1.105">
+            <div class="config-hint">Enter the local IP address of your ESP32 device</div>
+        </div>
+        
+        <div class="config-group">
+            <label class="config-label">Google Sheets Script URL:</label>
+            <input type="text" class="config-input" id="googleScriptUrl" placeholder="https://script.google.com/macros/s/...">
+            <div class="config-hint">Enter the URL of your Google Apps Script deployment</div>
+        </div>
+        
+        <div class="proxy-info">
+            <h3><i class="fas fa-info-circle"></i> Important Note</h3>
+            <p>To avoid CORS errors, your Google Apps Script URL must be deployed with the following settings:</p>
+            <ul>
+                <li>Execute as: <strong>Me</strong></li>
+                <li>Who has access: <strong>Anyone, even anonymous</strong></li>
+            </ul>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" id="saveConfigBtn">
+                <i class="fas fa-save"></i> Save Configuration
+            </button>
+            <button class="btn btn-warning" id="simulationToggleBtn">
+                <i class="fas fa-toggle-on"></i> Enable Simulation Mode
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Chart.js
+        const ctx = document.getElementById('occupancyChart').getContext('2d');
+        const occupancyChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Occupied', 'Vacant'],
+                datasets: [{
+                    data: [1, 2],
+                    backgroundColor: ['#ff6b6b', '#51cf66'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#e8eaed',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Current Parking Occupancy',
+                        color: '#e8eaed',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 12
+                    }
+                },
+                cutout: '65%',
+                animation: {
+                    animateRotate: true,
+                    animateScale: true
+                }
+            }
+        });
+        
+        // Parking spots data
+        const parkingData = [
+            { 
+                id: "spot1", 
+                number: 1, 
+                status: "vacant", 
+                distance: 120.5,
+                element: null,
+                distanceElement: null,
+                lastStatus: "vacant"
+            },
+            { 
+                id: "spot2", 
+                number: 2, 
+                status: "occupied", 
+                distance: 35.2,
+                element: null,
+                distanceElement: null,
+                lastStatus: "occupied"
+            },
+            { 
+                id: "spot3", 
+                number: 3, 
+                status: "vacant", 
+                distance: 115.8,
+                element: null,
+                distanceElement: null,
+                lastStatus: "vacant"
+            }
+        ];
+        
+        // DOM elements
+        const logOutput = document.getElementById('logOutput');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const autoToggleBtn = document.getElementById('autoToggleBtn');
+        const logBtn = document.getElementById('logBtn');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+        const saveConfigBtn = document.getElementById('saveConfigBtn');
+        const simulationToggleBtn = document.getElementById('simulationToggleBtn');
+        const esp32IpInput = document.getElementById('esp32Ip');
+        const googleScriptUrlInput = document.getElementById('googleScriptUrl');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionDot = document.querySelector('.connection-dot');
+        
+        // Configuration state
+        let config = {
+            esp32Ip: '192.168.1.105',
+            googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzVKWUtXfFCj-DcMGVCYCz9DR81xhf2PWAJWqtRK3KdmZKlmtYzz5CEHcaMnhkXqWIwkA/exec',
+            simulationMode: true,
+            autoRefresh: true,
+            autoSubmit: true
+        };
+        
+        // Simulation state
+        let autoRefreshInterval = null;
+        let autoSubmitInterval = null;
+        
+        // Initialize simulation
+        function initialize() {
+            // Load config from localStorage
+            loadConfig();
+            
+            // Connect DOM elements
+            parkingData.forEach(spot => {
+                spot.element = document.getElementById(spot.id);
+                spot.distanceElement = document.getElementById(`distance${spot.number}`);
+            });
+            
+            // Set up event listeners
+            refreshBtn.addEventListener('click', refreshData);
+            autoToggleBtn.addEventListener('click', toggleAutoRefresh);
+            logBtn.addEventListener('click', sendToGoogleSheets);
+            clearLogBtn.addEventListener('click', clearLog);
+            saveConfigBtn.addEventListener('click', saveConfig);
+            simulationToggleBtn.addEventListener('click', toggleSimulationMode);
+            
+            // Update UI based on config
+            updateUIFromConfig();
+            
+            // Start auto-refresh and auto-submit
+            if (config.autoRefresh) {
+                startAutoRefresh();
+            }
+            startAutoSubmit();
+            
+            // Add initial log
+            addLog("System initialized", "info");
+            addLog(`Mode: ${config.simulationMode ? 'Simulation' : 'Hardware'}`, "info");
+            addLog(`Google Sheets URL: ${config.googleScriptUrl}`, "info");
+        }
+        
+        // Load configuration from localStorage
+        function loadConfig() {
+            const savedConfig = localStorage.getItem('parkingConfig');
+            if (savedConfig) {
+                try {
+                    const parsedConfig = JSON.parse(savedConfig);
+                    Object.assign(config, parsedConfig);
+                } catch (e) {
+                    addLog("Error parsing saved configuration", "error");
+                }
+            }
+        }
+        
+        // Save configuration to localStorage
+        function saveConfig() {
+            // Validate ESP32 IP format
+            const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+            const esp32Ip = esp32IpInput.value.trim();
+            
+            if (!ipRegex.test(esp32Ip)) {
+                addLog("Invalid ESP32 IP address format", "error");
+                esp32IpInput.focus();
+                return;
+            }
+            
+            // Validate Google Script URL
+            const googleUrl = googleScriptUrlInput.value.trim();
+            if (!googleUrl || !googleUrl.startsWith('https://')) {
+                addLog("Invalid Google Script URL", "error");
+                googleScriptUrlInput.focus();
+                return;
+            }
+            
+            config.esp32Ip = esp32Ip;
+            config.googleScriptUrl = googleUrl;
+            
+            localStorage.setItem('parkingConfig', JSON.stringify(config));
+            addLog("Configuration saved successfully", "success");
+        }
+        
+        // Update UI from config
+        function updateUIFromConfig() {
+            esp32IpInput.value = config.esp32Ip;
+            googleScriptUrlInput.value = config.googleScriptUrl;
+            
+            simulationToggleBtn.innerHTML = config.simulationMode ? 
+                '<i class="fas fa-toggle-on"></i> Disable Simulation' : 
+                '<i class="fas fa-toggle-off"></i> Enable Simulation';
+                
+            simulationToggleBtn.className = config.simulationMode ? 
+                'btn btn-warning' : 'btn';
+        }
+        
+        // Toggle simulation mode
+        function toggleSimulationMode() {
+            config.simulationMode = !config.simulationMode;
+            updateUIFromConfig();
+            addLog(`Switched to ${config.simulationMode ? 'Simulation' : 'Hardware'} mode`, "info");
+        }
+        
+        // Refresh data
+        function refreshData() {
+            if (config.simulationMode) {
+                simulateDataChanges();
+            } else {
+                fetchParkingData();
+            }
+        }
+        
+        // ==============================================
+        // REAL HARDWARE INTEGRATION
+        // ==============================================
+        
+        // Fetch real data from ESP32
+        function fetchParkingData() {
+            // Show loading state
+            connectionStatus.textContent = "Connecting to ESP32...";
+            connectionDot.className = "connection-dot";
+            
+            fetch(`http://${config.esp32Ip}/parking-status`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    // Update UI with real data
+                    data.spots.forEach(spot => {
+                        const spotElement = document.getElementById(`spot${spot.id}`);
+                        const distanceElement = document.getElementById(`distance${spot.id}`);
+                        
+                        // Update values
+                        distanceElement.textContent = spot.distance.toFixed(1);
+                        
+                        // Find the spot in our parkingData
+                        const parkingSpot = parkingData.find(s => s.number === spot.id);
+                        if (parkingSpot) {
+                            // Save previous status
+                            parkingSpot.lastStatus = parkingSpot.status;
+                            
+                            // Update current status
+                            parkingSpot.status = spot.status;
+                            parkingSpot.distance = spot.distance;
+                            
+                            // Update status if changed
+                            if (parkingSpot.status !== parkingSpot.lastStatus) {
+                                spotElement.className = `parking-spot ${spot.status}`;
+                                spotElement.querySelector('.spot-status').textContent = 
+                                    spot.status.charAt(0).toUpperCase() + spot.status.slice(1);
+                                
+                                // Log to Google Sheets
+                                logToGoogleSheets(spot.id, spot.status, spot.distance);
+                            }
+                        }
+                    });
+                    
+                    // Update connection status
+                    connectionStatus.textContent = `Connected to ESP32 at ${config.esp32Ip}`;
+                    connectionDot.className = "connection-dot connected";
+                    
+                    // Update chart
+                    updateChart();
+                    
+                    addLog("Data refreshed from ESP32 sensors", "info");
+                })
+                .catch(error => {
+                    connectionStatus.textContent = `Connection failed: ${error.message}`;
+                    connectionDot.className = "connection-dot disconnected";
+                    addLog(`Error fetching data: ${error.message}`, "error");
+                });
+        }
+        
+        // Log to Google Sheets - FIXED with form submission
+        function logToGoogleSheets(spotId, status, distance) {
+            // Validate Google Script URL
+            if (!config.googleScriptUrl || !config.googleScriptUrl.startsWith('https://')) {
+                addLog(`Invalid Google Script URL: ${config.googleScriptUrl}`, "error");
+                return;
+            }
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('spot', spotId);
+            formData.append('status', status);
+            formData.append('distance', distance);
+            
+            fetch(config.googleScriptUrl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Google Sheets API error');
+                return response.json();
+            })
+            .then(data => {
+                if (data.result === "success") {
+                    addLog(`Spot ${spotId}: ${status} (${distance.toFixed(1)}cm) logged to Google Sheets`, "success");
+                } else {
+                    addLog(`Google Sheets error: ${data.message}`, "error");
+                }
+            })
+            .catch(error => {
+                addLog(`Error logging to Google Sheets: ${error.message}`, "error");
+            });
+        }
+        
+        // ==============================================
+        // SIMULATION FUNCTIONS
+        // ==============================================
+        
+        // Simulate data changes
+        function simulateDataChanges() {
+            parkingData.forEach(spot => {
+                // Add small random variation to distance
+                const variation = (Math.random() * 4) - 2;
+                spot.distance = Math.max(20, Math.min(spot.distance + variation, 150));
+                spot.distanceElement.textContent = spot.distance.toFixed(1);
+                
+                // Save previous status
+                spot.lastStatus = spot.status;
+                
+                // Update status if distance crosses threshold
+                const newStatus = spot.distance < 50 ? "occupied" : "vacant";
+                if (newStatus !== spot.status) {
+                    spot.status = newStatus;
+                    updateSpotDisplay(spot);
+                }
+            });
+            
+            // Update connection status
+            connectionStatus.textContent = "Simulation Mode Active";
+            connectionDot.className = "connection-dot connected";
+            
+            // Update chart
+            updateChart();
+            
+            addLog("Simulated data refreshed", "info");
+        }
+        
+        // Update spot display
+        function updateSpotDisplay(spot) {
+            spot.element.className = `parking-spot ${spot.status}`;
+            spot.element.querySelector('.spot-status').textContent = 
+                spot.status.charAt(0).toUpperCase() + spot.status.slice(1);
+            
+            addLog(`Spot ${spot.number} changed to ${spot.status} (${spot.distance.toFixed(1)}cm)`, "warning");
+            
+            // Log to Google Sheets
+            logToGoogleSheets(spot.number, spot.status, spot.distance);
+        }
+        
+        // Update chart
+        function updateChart() {
+            const occupied = parkingData.filter(spot => spot.status === "occupied").length;
+            const vacant = parkingData.filter(spot => spot.status === "vacant").length;
+            
+            occupancyChart.data.datasets[0].data = [occupied, vacant];
+            occupancyChart.update();
+        }
+        
+        // Send to Google Sheets
+        function sendToGoogleSheets() {
+            // Show sending indicator
+            const originalText = logBtn.innerHTML;
+            logBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            logBtn.disabled = true;
+            
+            // Create log entries
+            parkingData.forEach(spot => {
+                logToGoogleSheets(spot.number, spot.status, spot.distance);
+            });
+            
+            // Show confirmation
+            setTimeout(() => {
+                logBtn.innerHTML = '<i class="fas fa-check"></i> Data Sent!';
+                setTimeout(() => {
+                    logBtn.innerHTML = originalText;
+                    logBtn.disabled = false;
+                }, 2000);
+            }, 1000);
+        }
+        
+        // Auto submit to Google Sheets
+        function startAutoSubmit() {
+            if (autoSubmitInterval) clearInterval(autoSubmitInterval);
+            autoSubmitInterval = setInterval(() => {
+                if (config.autoRefresh) {
+                    addLog("Auto-submitting data to Google Sheets", "info");
+                    parkingData.forEach(spot => {
+                        logToGoogleSheets(spot.number, spot.status, spot.distance);
+                    });
+                }
+            }, 5000);
+        }
+        
+        // Add message to log
+        function addLog(message, type) {
+            const now = new Date();
+            const timestamp = now.toTimeString().split(' ')[0];
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            let badgeClass = "badge-info";
+            let badgeText = "INFO";
+            
+            if (type === "success") {
+                badgeClass = "badge-success";
+                badgeText = "SENT";
+            } else if (type === "warning") {
+                badgeClass = "badge-warning";
+                badgeText = "CHANGE";
+            } else if (type === "error") {
+                badgeClass = "badge-danger";
+                badgeText = "ERROR";
+            }
+            
+            logEntry.innerHTML = `
+                <span class="log-timestamp">${timestamp}</span>
+                <span class="status-badge ${badgeClass}">${badgeText}</span>
+                <span class="log-message">${message}</span>
+            `;
+            
+            logOutput.prepend(logEntry);
+            logOutput.scrollTop = 0;
+        }
+        
+        // Clear log
+        function clearLog() {
+            logOutput.innerHTML = '';
+            addLog("Log cleared", "info");
+        }
+        
+        // Toggle auto-refresh
+        function toggleAutoRefresh() {
+            config.autoRefresh = !config.autoRefresh;
+            
+            if (config.autoRefresh) {
+                startAutoRefresh();
+                autoToggleBtn.innerHTML = '<i class="fas fa-power-off"></i> Auto-Refresh: ON';
+                autoToggleBtn.classList.add('btn-success');
+                autoToggleBtn.classList.remove('btn-danger');
+                addLog("Auto-refresh enabled", "info");
+            } else {
+                stopAutoRefresh();
+                autoToggleBtn.innerHTML = '<i class="fas fa-power-off"></i> Auto-Refresh: OFF';
+                autoToggleBtn.classList.remove('btn-success');
+                autoToggleBtn.classList.add('btn-danger');
+                addLog("Auto-refresh disabled", "info");
+            }
+        }
+        
+        // Start auto-refresh
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(refreshData, 5000);
+        }
+        
+        // Stop auto-refresh
+        function stopAutoRefresh() {
+            clearInterval(autoRefreshInterval);
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
