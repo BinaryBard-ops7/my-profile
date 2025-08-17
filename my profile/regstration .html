@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Double:wght@100..900&family=Saira:ital,wght@0,100..900;1,100..900&family=Smooch+Sans:wght@100..900&family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <title>University Registration Form</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Saira', sans-serif;
+        }
+
+        body {
+            background-image: radial-gradient(circle, rgb(1, 3, 54), rgb(0, 0, 0), rgb(58, 0, 0));
+            color: aliceblue;
+
+        }
+
+        h1 {
+            width: 100%;
+            font-family: 'Saira', sans-serif;
+            font-weight: 900;
+            color: #ffffff;
+            text-align: center;
+            margin-top: 20px;
+            background-color: rgba(0, 0, 140, 0.18);
+            border: 1px solid rgb(140, 244, 251);
+            border-radius: 20px 20px 0 0;
+                backdrop-filter: blur(5px);
+        }
+
+        form {
+            max-width: 800px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        fieldset {
+            border: 1.5px dotted #ffffff;
+            border-radius: 5px;
+            padding: 20px;
+
+            margin: 0.5px;
+            margin-bottom: 20px;
+        }
+
+        legend {
+            font-family: tomorrow, sans-serif;
+            font-weight: 200px;
+            font-size: xx-small;
+            background-image: linear-gradient(to right, #000000, #ff0073);
+            color: #ffffff;
+            padding: 0 10px;
+            font-size: 1.1em;
+            border: 1.5px dotted #ffffff;
+            border-radius: 7px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="number"],
+        input[type="url"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        #gender,
+        #blood-group-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="radio"],
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        input[type="submit"],
+        button {
+            background-color: rgb(140, 244, 251);
+            color: #000000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        input[type="submit"]:hover,
+        button:hover {
+            background-color: rgb(0, 0, 140);
+            color: #ffffff;
+        }
+
+        #blood-group-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        input[type="file"] {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: transparent;
+            color: #ffffff;
+        }
+
+        button[type="submit"] {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto 0;
+            transition: background-color 0.3s;
+        }
+
+
+
+    </style>
+
+
+</head>
+
+<body>
+
+    <h1>University Registration Form</h1>
+    <hr>
+    <form action="submit">
+        <fieldset>
+            <legend>Personal Information</legend>
+            <fieldset>
+                <legend>about your self</legend>
+                <label for="fullname">Full Name:</label>
+                <input type="text" id="fullname" name="fullname" placeholder="Enter your name" required> <br><br>
+
+                <label for="dob">Date of Birth:</label>
+                <input type="date" id="dob" name="dob" required> <br> <br>
+
+                <label for="gender">Select Your Gender :</label>
+                <div id="gender">
+                    <input type="radio" id="male" name="gender" value="Male" required> <label for="Male">Male</label>
+                    <input type="radio" id="female" name="gender" value="female" required> <label for="female">
+                        Female</label>
+                    <input type="radio" id="other" name="gender" value="other" required> <label
+                        for="other">Other</label>
+                </div>
+                <br><br>
+
+                <label for="blood-group">Select Your Blood Group:</label><br>
+                <div id="blood-group-options">
+                    <input type="radio" id="a-positive" name="blood-group" value="A+" required> <label
+                        for="a-positive">A+</label>
+                    <input type="radio" id="a-negative" name="blood-group" value="A-" required> <label
+                        for="a-negative">A-</label>
+                    <input type="radio" id="b-positive" name="blood-group" value="B+" required> <label
+                        for="b-positive">B+</label>
+                    <input type="radio" id="b-negative" name="blood-group" value="B-" required> <label
+                        for="b-negative">B-</label>
+                    <input type="radio" id="ab-positive" name="blood-group" value="AB+" required> <label
+                        for="ab-positive">AB+</label>
+                    <input type="radio" id="ab-negative" name="blood-group" value="AB-" required> <label
+                        for="ab-negative">AB-</label>
+                    <input type="radio" id="o-positive" name="blood-group" value="O+" required> <label
+                        for="o-positive">O+</label>
+                    <input type="radio" id="o-negative" name="blood-group" value="O-" required> <label
+                        for="o-negative">O-</label>
+                </div>
+                <br><br>
+            </fieldset>
+            <fieldset>
+                <legend>Your contact info..</legend>
+                <label for="email">Enter your email:</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email"> <br><br>
+
+                <label for="phone">Enter your phone no:</label>
+                <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" pattern="[0-9]{10}"
+                    required> <br><br>
+
+                <label for="mob">Alternate phone no:</label>
+                <input type="tel" id="mob" name="mob" placeholder="Enter your alternate phone number"
+                    pattern="[0-9]{10}" required> <br><br>
+
+                <label for="address">Enter your address:</label><br>
+                <textarea id="address" name="address" rows="4" cols="50" placeholder="Enter your address"></textarea>
+                <br><br>
+
+                <label for="city">Enter your city:</label>
+                <input type="text" id="city" name="city" placeholder="Enter your city"> <br><br>
+
+                <label for="state">Select your state:</label>
+                <select id="state" name="state">
+                    <option value="" disabled selected>Select your state</option>
+                    <option value="state1">Assam</option>
+                    <option value="state2">Bihar</option>
+                    <option value="state3">Chandigadh</option>
+                </select> <br><br>
+            </fieldset>
+
+            <fieldset>
+                <legend>Academic Information</legend>
+                <label for="School">Previous School/College:</label>
+                <input type="text" id="previous_school" name="previous_school"
+                    placeholder="Enter your previous school/college" required> <br><br>
+
+                <label for="year_graduated">Year Graduated:</label>
+                <input type="number" id="year_graduated" name="year_graduated" min="2000" max="2025"
+                    placeholder="Enter your year of graduation" required> <br><br>
+
+                <label for="program">Program of Interest:</label>
+                <select id="program" name="program" required>
+                    <option value="" disabled selected>Select your program</option>
+                    <option value="diploma">Diploma</option>
+                    <option value="bachelor">Bachelor's Degree</option>
+                    <option value="master">Master's Degree</option>
+                    <option value="phd">PhD</option>
+                </select> <br><br>
+
+            </fieldset>
+            <fieldset>
+                <legend>Course Selection</legend>
+                <div id="Course"> <label for="skill">Skills you want to learn:</label><br>
+                    <input type="checkbox" id="skill1" name="skills" value="Programming">
+                    <label for="skill1">Programming</label><br>
+                    <input type="checkbox" id="skill2" name="skills" value="Data Science">
+                    <label for="skill2">Data Science</label><br>
+                    <input type="checkbox" id="skill3" name="skills" value="Web Development">
+                    <label for="skill3">Web Development</label><br>
+                    <input type="checkbox" id="skill4" name="skills" value="Machine Learning">
+                    <label for="skill4">Machine Learning</label>
+                </div><br> <br>
+
+                <label for="project">Enter your project url:</label>
+                <input type="url" id="project" name="project" placeholder="Enter your project URL"> <br><br>
+            </fieldset>
+
+            <FIeldset>
+                <Legend>Documents</Legend>
+                <label for="doc">Upload your Id Proof:</label>
+                <select id="doc" name="doc" required>
+                    <option value="" disabled selected>Select your document</option>
+                    <option value="aadhar">Aadhar Card </option>
+                    <option value="passport">Passport</option>
+                    <option value="voterid">Voter ID</option>
+                </select> <input type="file" id="doc_upload" name="doc_upload" accept=".jpg,.jpeg,.png,.pdf" required>
+                <br><br>
+                <label for="pic">Upload your picture:</label>
+                <input type="file">
+            </FIeldset>
+
+
+            <br>
+            <label for="confermation">
+                <input type="checkbox" id="confermation" name="confermation" required>
+                I confirm that the above information is correct and agree to the terms and conditions.
+            </label><br><br>
+            <button type="submit" align="center">submit</button>
+
+        </fieldset>
+    </form>
+
+</body>
+
+</html>
