@@ -456,7 +456,7 @@
   top: 17px;
   right: 17px;
   transition-delay: 0.8s;
-  background-image: url(images/me.jpg);
+  background-image: url(../images/me.jpg);
   background-size: cover;
   border: 5px solid rgba(9, 207, 161, 0.699);
   opacity: 90%;
